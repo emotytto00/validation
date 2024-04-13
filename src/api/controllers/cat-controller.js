@@ -1,34 +1,58 @@
-import {addCat, findCatById, listAllCats} from '../models/cat-model.js';
+import db from '../../db.js';
 
-const getCat = (req, res) => {
-  res.json(listAllCats());
+// PUT update cat
+const updateCat = (req, res) => {
+  const catId = req.params.id;
+  const { cat_name, owner } = req.body;
+  db.query('UPDATE cats SET cat_name = ?, owner = ? WHERE cat_id = ?', [cat_name, owner, catId], (error, results) => {
+    if (error) {
+      console.error('Error updating cat:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+    if (results.affectedRows === 0) {
+      res.status(404).json({ message: 'Cat not found' });
+    } else {
+      res.json({ message: 'Cat updated successfully' });
+    }
+  });
 };
 
-const getCatById = (req, res) => {
-  const cat = findCatById(req.params.id);
-  if (cat) {
-    res.json(cat);
-  } else {
-    res.sendStatus(404);
-  }
-};
-
-const postCat = (req, res) => {
-  const result = addCat(req.body);
-  if (result.cat_id) {
-    res.status(201);
-    res.json({message: 'New cat added.', result});
-  } else {
-    res.sendStatus(400);
-  }
-};
-
-const putCat = (req, res) => {
-  res.sendStatus(200);
-};
-
+// DELETE cat
 const deleteCat = (req, res) => {
-  res.sendStatus(200);
+  const catId = req.params.id;
+  db.beginTransaction((err) => {
+    if (err) {
+      console.error('Error starting transaction:', err);
+      res.status(500).json({ error: 'Internal Server Error' });
+      return;
+    }
+    db.query('DELETE FROM cats WHERE cat_id = ?', [catId], (error, results) => {
+      if (error) {
+        console.error('Error deleting cat:', error);
+        db.rollback(() => {
+          res.status(500).json({ error: 'Internal Server Error' });
+        });
+        return;
+      }
+      if (results.affectedRows === 0) {
+        db.rollback(() => {
+          res.status(404).json({ message: 'Cat not found' });
+        });
+        return;
+      }
+      db.commit((err) => {
+        if (err) {
+          console.error('Error committing transaction:', err);
+          db.rollback(() => {
+            res.status(500).json({ error: 'Internal Server Error' });
+          });
+          return;
+        }
+        res.json({ message: 'Cat deleted successfully' });
+      });
+    });
+  });
 };
 
-export {getCat, getCatById, postCat, putCat, deleteCat};
+export { updateCat, deleteCat };
