@@ -1,6 +1,5 @@
 import db from '../../db.js';
 
-// PUT update cat
 const updateCat = (req, res) => {
   const catId = req.params.id;
   const { cat_name, owner } = req.body;
@@ -18,7 +17,6 @@ const updateCat = (req, res) => {
   });
 };
 
-// DELETE cat
 const deleteCat = (req, res) => {
   const catId = req.params.id;
   db.beginTransaction((err) => {

@@ -1,6 +1,5 @@
 import db from '../../db.js';
 
-// PUT update user
 const updateUser = (req, res) => {
   const userId = req.params.id;
   const { name, username, email, role, password } = req.body;
@@ -18,7 +17,6 @@ const updateUser = (req, res) => {
   });
 };
 
-// DELETE user
 const deleteUser = (req, res) => {
   const userId = req.params.id;
   db.beginTransaction((err) => {
