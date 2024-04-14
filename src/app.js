@@ -2,6 +2,7 @@ import express from 'express';
 import api from './api/index.js';
 import { notFoundHandler, errorHandler } from './middlewares.js';
 import cors from 'cors';
+import { notFoundHandler, errorHandler } from './src/middlewares.js';
 
 const app = express();
 
@@ -16,7 +17,8 @@ app.use(notFoundHandler)
 app.use(errorHandler)
 
 app.use(cors());
-
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 app.get('/', (req, res) => {
   res.send('Welcome to my REST API!');

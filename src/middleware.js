@@ -36,19 +36,23 @@ const authenticateToken = (req, res, next) => {
 };
 
 const notFoundHandler = (req, res, next) => {
-  const error = new Error(`Resource not found: ${req.originalUrl}`)
-  error.status = 404
-
-  next(error)
-}
+  const error = new Error(`Not Found - ${req.originalUrl}`);
+  error.status = 404;
+  next(error);
+};
 
 const errorHandler = (err, req, res, next) => {
-  res.status(err.status || 500)
+  res.status(err.status || 500);
   res.json({
-    message: err.message,
-    status: res.status || 500
-  })
-}
+    error: {
+      message: err.message,
+      status: err.status || 500
+    }
+  });
+};
+
+export { notFoundHandler, errorHandler };
+
 
 const validationErrors = (req, res, next) => {
   const errors = validationResult(req)
