@@ -1,65 +1,80 @@
-import db from '../../db.js';
+import {
+  addUser,
+  listAllUsers,
+  findUserById,
+  updateUser,
+  removeUser,
+} from '../models/user-model.js';
+import bcrypt from 'bcrypt';
 
-const updateUser = (req, res) => {
-  const userId = req.params.id;
-  const { name, username, email, role, password } = req.body;
-  db.query('UPDATE users SET name = ?, username = ?, email = ?, role = ?, password = ? WHERE user_id = ?', [name, username, email, role, password, userId], (error, results) => {
-    if (error) {
-      console.error('Error updating user:', error);
-      res.status(500).json({ error: 'Internal Server Error' });
-      return;
-    }
-    if (results.affectedRows === 0) {
-      res.status(404).json({ message: 'User not found' });
-    } else {
-      res.json({ message: 'User updated successfully' });
-    }
-  });
+const getUser = async (req, res) => {
+  const users = res.json(await listAllUsers());
+  if (!users) {
+    res.sendStatus(404);
+    return;
+  }
+  res.json(users);
 };
 
-const deleteUser = (req, res) => {
-  const userId = req.params.id;
-  db.beginTransaction((err) => {
-    if (err) {
-      console.error('Error starting transaction:', err);
-      res.status(500).json({ error: 'Internal Server Error' });
-      return;
-    }
-    db.query('DELETE FROM cats WHERE owner = ?', [userId], (error, catResults) => {
-      if (error) {
-        console.error('Error deleting cats of user:', error);
-        db.rollback(() => {
-          res.status(500).json({ error: 'Internal Server Error' });
-        });
-        return;
-      }
-      db.query('DELETE FROM users WHERE user_id = ?', [userId], (error, userResults) => {
-        if (error) {
-          console.error('Error deleting user:', error);
-          db.rollback(() => {
-            res.status(500).json({ error: 'Internal Server Error' });
-          });
-          return;
-        }
-        if (userResults.affectedRows === 0) {
-          db.rollback(() => {
-            res.status(404).json({ message: 'User not found' });
-          });
-          return;
-        }
-        db.commit((err) => {
-          if (err) {
-            console.error('Error committing transaction:', err);
-            db.rollback(() => {
-              res.status(500).json({ error: 'Internal Server Error' });
-            });
-            return;
-          }
-          res.json({ message: 'User deleted successfully' });
-        });
-      });
-    });
-  });
+const getUserById = async (req, res) => {
+  const user = await findUserById(req.params.id);
+  if (!user) {
+    res.sendStatus(404);
+    return;
+  }
+  res.json(user);
 };
 
-export { updateUser, deleteUser };
+const postUser = async (req, res, next) => {
+  req.body.password = bcrypt.hashSync(req.body.password, 10);
+
+  try {
+
+    const result = await addUser(req.body);
+    if (!result) {
+      const error = new Error("Invalid or missing fields")
+      error.status = 400
+      next(error);
+      return;
+    }
+    res.status(201);
+    res.json(result);
+  } catch (error) {
+    next(error)
+  }
+};
+
+const putUser = async (req, res) => {
+  if (
+    res.locals.user.user_id !== Number(req.params.id) &&
+    res.locals.user.role !== 'admin'
+  ) {
+    res.sendStatus(403);
+    return;
+  }
+
+  const result = await updateUser(req.body, req.params.id);
+  if (!result) {
+    res.sendStatus(400);
+    return;
+  }
+  res.json(result);
+};
+
+const deleteUser = async (req, res) => {
+  if (
+    res.locals.user.user_id !== Number(req.params.id) &&
+    res.locals.user.role !== 'admin'
+  ) {
+    res.sendStatus(403);
+    return;
+  }
+  const result = await removeUser(req.params.id);
+  if (!result) {
+    res.sendStatus(400);
+    return;
+  }
+  res.json(result);
+};
+
+export { getUser, getUserById, postUser, putUser, deleteUser };

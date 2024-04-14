@@ -1,16 +1,26 @@
 import express from 'express';
-import { getAllUsers, getUserById, addUser, updateUser, deleteUser } from '../controllers/user-controller.js';
+import {
+  getUser,
+  getUserById,
+  postUser,
+  putUser,
+  deleteUser,
+} from '../controllers/user-controller.js';
+import { body } from 'express-validator';
+import { validationErrors } from '../../middlewares.js';
 
 const userRouter = express.Router();
 
-userRouter.route('/').get(getAllUsers);
+userRouter.route('/')
+  .get(getUser)
+  .post(
+    body('email').trim().isEmail(),
+    body("username").trim().isLength({min: 3, max: 20}),
+    body("password").trim().isLength({min: 8}),
+    validationErrors,
+    postUser
+  );
 
-userRouter.route('/:id').get(getUserById);
-
-userRouter.route('/').post(addUser);
-
-userRouter.route('/:id').put(updateUser);
-
-userRouter.route('/:id').delete(deleteUser);
+userRouter.route('/:id').get(getUserById).put(putUser).delete(deleteUser);
 
 export default userRouter;

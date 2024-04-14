@@ -1,25 +1,25 @@
 import express from 'express';
+import api from './api/index.js';
+import { notFoundHandler, errorHandler } from './middlewares.js';
+import cors from 'cors';
 
 const app = express();
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use('/public', express.static('public'));
 
-app.get('/', (req, res) => {
-  res.send('Hello World!');
-});
+app.use('/api/v1', api);
 
-app.get('/api/v1/cat', (req, res) => {
-  const cat = {
-    cat_id: 1,
-    name: 'Fluffy',
-    birthdate: '2022-01-01',
-    weight: 5,
-    owner: 'John Doe',
-    image: 'https://loremflickr.com/320/240/cat',
-  };
-  res.json(cat);
+app.use(notFoundHandler)
+app.use(errorHandler)
+
+app.use(cors());
+
+
+app.get('/', (req, res) => {
+  res.send('Welcome to my REST API!');
 });
 
 export default app;
